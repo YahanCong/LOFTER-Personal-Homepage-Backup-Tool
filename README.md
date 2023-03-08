@@ -22,13 +22,13 @@ Chrome 110.0.5481.178
 
 ### Requirements
 
-requests == 2.28.1
+requests
 
-beautifulsoup4 == 4.11.1
+beautifulsoup4
 
-html2text == 2020.1.16
+html2text
 
-selenium == 4.8.2
+selenium
 
 json
 
