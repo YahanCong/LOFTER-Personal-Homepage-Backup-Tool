@@ -40,7 +40,7 @@ json
 
 ​	此程序是根据本人使用的LOFTER主题写的，如果和本人主题不一致有可能会失败！为了确保格式一致请在开始前登录自己的主页将模板设置为“糖果格子”。
 
-![theme](.\user_guide_png\theme.png)
+![theme](user_guide_png/theme.png)
 
 
 
