@@ -54,7 +54,7 @@ json
 
   ![cookie1](user_guide_png/cookie1.png)
 
-![cookie2](user_guide_png\cookie2.png)
+![cookie2](user_guide_png/cookie2.png)
 
 - 运行程序选择登录模式后会弹出LOFTER登录界面，请在20秒内登录完成
 - LOFTER ID是 .lofter.com前面的那串字符
@@ -69,15 +69,15 @@ json
 
 #### HTML文件
 
-![html_show](user_guide_png\html_show.png)
+![html_show](user_guide_png/html_show.png)
 
 
 
 #### Markdown文件
 
-![md_show1](user_guide_png\md_show1.png)
+![md_show1](user_guide_png/md_show1.png)
 
-![md_show2](user_guide_png\md_show2.png)
+![md_show2](user_guide_png/md_show2.png)
 
 
 
