@@ -16,7 +16,7 @@ LOFTER个人主页备份工具
 
 python 3.9
 
-Chrome 110.0.5481.178
+Chrome
 
 
 
