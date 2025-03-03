@@ -9,6 +9,13 @@ from selenium.webdriver.common.action_chains import ActionChains
 import re
 import json
 
+def extract_post_id(url):
+    """
+    从文章 URL 中提取唯一的文章标识。例如：
+    https://LOFTERID.lofter.com/post/3ed335_2be031f2e  -> "3ed335_2be031f2e"
+    """
+    return url.rstrip('/').split('/')[-1]
+
 def get_cookies():
     driver = webdriver.Chrome()
     driver.get('https://www.lofter.com/front/login/')
@@ -80,6 +87,74 @@ def get_article_links(cookie, LOF_ID):
 
 
 # 获取文章内容
+# def get_html(url, login_flag, cookie):
+#     response = requests.get(url, cookies=cookie)
+#     # 获取原网页源码
+#     html_soup = BeautifulSoup(response.content, 'html.parser')
+#     iframe = html_soup.find('iframe', {'id': 'comment_frame'})
+#     comment_url = 'http:' + iframe['src']
+#
+#     # 获取评论
+#     # 创建浏览器驱动
+#     driver = webdriver.Chrome()
+#     if login_flag:
+#         driver.get(comment_url)
+#         driver.delete_all_cookies()
+#         # 添加 cookie
+#         with open('cookies.txt', 'r') as f:
+#             cookie_list = json.load(f)
+#             for cookie in cookie_list:
+#                 driver.add_cookie(cookie_dict=cookie)
+#
+#         # 刷新页面
+#         driver.refresh()
+#
+#     # 打开网页
+#     driver.get(comment_url)
+#
+#     #等待加载
+#     time.sleep(2.5)
+#     driver.execute_script("window.scrollBy(0, 15000)")
+#
+#     # 获取“查看更多”按钮
+#     load_more = driver.find_element(By.XPATH, "//div[@class=\"bcmtmore s-bd2\"]")
+#
+#     # 循环点击“查看更多”按钮直到全部展开
+#     while True:
+#         try:
+#             # 点击按钮
+#             load_more.click()
+#             time.sleep(0.7)
+#
+#             # 模拟下拉
+#             actions = ActionChains(driver)
+#             actions.move_to_element(load_more).perform()
+#             time.sleep(0.7)
+#
+#
+#         except:
+#             # 找不到“查看更多”按钮，结束循环
+#             break
+#
+#
+#     # 获取iframe中的html源码
+#     iframe_html = driver.page_source
+#
+#     # 解析html源码
+#     soup_iframe = BeautifulSoup(iframe_html, 'html.parser')
+#
+#     # 关闭浏览器驱动
+#     driver.quit()
+#
+#     # 获取需要的内容，这里假设是class为bcmt的div
+#     bcmt_div = soup_iframe.find('div', {'class': 'bcmt'})
+#
+#     # 将iframe内容插入原html
+#     target_div = html_soup.find('iframe', {'id': 'comment_frame'})
+#     target_div.replace_with(bcmt_div)
+#
+#     return html_soup
+
 def get_html(url, login_flag, cookie):
     response = requests.get(url, cookies=cookie)
     # 获取原网页源码
@@ -87,173 +162,281 @@ def get_html(url, login_flag, cookie):
     iframe = html_soup.find('iframe', {'id': 'comment_frame'})
     comment_url = 'http:' + iframe['src']
 
-    # 获取评论
     # 创建浏览器驱动
     driver = webdriver.Chrome()
     if login_flag:
         driver.get(comment_url)
         driver.delete_all_cookies()
-        # 添加 cookie
+        # 读取 cookies.txt 文件中的 cookie，并删除 domain 键以防止不匹配
         with open('cookies.txt', 'r') as f:
             cookie_list = json.load(f)
-            for cookie in cookie_list:
-                driver.add_cookie(cookie_dict=cookie)
-
-        # 刷新页面
+        for cookie_item in cookie_list:
+            if 'domain' in cookie_item:
+                del cookie_item['domain']
+            driver.add_cookie(cookie_dict=cookie_item)
+        # 刷新页面，确保 cookie 生效
         driver.refresh()
-
-    # 打开网页
-    driver.get(comment_url)
-
-    #等待加载
-    time.sleep(2.5)
-    driver.execute_script("window.scrollBy(0, 15000)")
-
-    # 获取“查看更多”按钮
-    load_more = driver.find_element(By.XPATH, "//div[@class=\"bcmtmore s-bd2\"]")
-
-    # 循环点击“查看更多”按钮直到全部展开
-    while True:
+        driver.get(comment_url)
+        # 等待页面加载
+        time.sleep(2.5)
+        driver.execute_script("window.scrollBy(0, 15000)")
+        # 尝试点击“查看更多”按钮，若找不到则跳过
         try:
-            # 点击按钮
-            load_more.click()
-            time.sleep(0.7)
-
-            # 模拟下拉
-            actions = ActionChains(driver)
-            actions.move_to_element(load_more).perform()
-            time.sleep(0.7)
-
-
-        except:
-            # 找不到“查看更多”按钮，结束循环
-            break
-
-
-    # 获取iframe中的html源码
-    iframe_html = driver.page_source
-
-    # 解析html源码
-    soup_iframe = BeautifulSoup(iframe_html, 'html.parser')
-
-    # 关闭浏览器驱动
-    driver.quit()
-
-    # 获取需要的内容，这里假设是class为bcmt的div
-    bcmt_div = soup_iframe.find('div', {'class': 'bcmt'})
-
-    # 将iframe内容插入原html
-    target_div = html_soup.find('iframe', {'id': 'comment_frame'})
-    target_div.replace_with(bcmt_div)
-
+            load_more = driver.find_element(By.XPATH, "//div[@class=\"bcmtmore s-bd2\"]")
+            while True:
+                try:
+                    load_more.click()
+                    time.sleep(0.7)
+                    actions = ActionChains(driver)
+                    actions.move_to_element(load_more).perform()
+                    time.sleep(0.7)
+                except Exception:
+                    break
+        except Exception:
+            pass
+        # 获取处理后的页面源码
+        iframe_html = driver.page_source
+        soup_iframe = BeautifulSoup(iframe_html, 'html.parser')
+        driver.quit()
+        # 找到评论部分（这里假设评论在 class 为 bcmt 的 div 中）
+        bcmt_div = soup_iframe.find('div', {'class': 'bcmt'})
+        target_div = html_soup.find('iframe', {'id': 'comment_frame'})
+        target_div.replace_with(bcmt_div)
     return html_soup
 
 
+
 # 保存html格式
-def get_article_html(soup, LOF_ID, filenum):
+# def get_article_html(soup, LOF_ID, filenum):
+#
+#     # 获取文章标题
+#     title_div = soup.find('h2', {'class': 'title'})
+#     if title_div != None:
+#         title = title_div.get_text().strip().replace('\n', '')
+#     else:
+#         title = filenum
+#
+#     # 获取文章发布时间
+#     time_div = soup.find('div', {'class': 'itm clear time'})
+#     if time_div != None:
+#         time = time_div.get_text().strip()
+#     else:
+#         time = 'Default'
+#
+#     # 设置保存文件路径和文件名
+#     subdir_html = '{}_html'.format(LOF_ID) # html文件
+#     file_title = re.sub(r'[^\w\-_\. ]', '', title)
+#     filename_html = '{}_{}_{}_{}.html'.format(LOF_ID, filenum, file_title, time) # html文件
+#
+#     # 保存文章原html格式文件
+#     write_file(subdir_html, filename_html, soup.prettify(), 'html')
+
+def get_article_html(soup, LOF_ID, article_url):
+    # 从文章 URL 中提取唯一标识
+    post_id = extract_post_id(article_url)
 
     # 获取文章标题
     title_div = soup.find('h2', {'class': 'title'})
-    if title_div != None:
+    if title_div is not None:
         title = title_div.get_text().strip().replace('\n', '')
     else:
-        title = filenum
+        title = post_id  # 如果没找到标题，使用 post id
 
     # 获取文章发布时间
     time_div = soup.find('div', {'class': 'itm clear time'})
-    if time_div != None:
-        time = time_div.get_text().strip()
+    if time_div is not None:
+        time_str = time_div.get_text().strip()
     else:
-        time = 'Default'
+        time_str = 'Default'
 
     # 设置保存文件路径和文件名
-    subdir_html = '{}_html'.format(LOF_ID) # html文件
+    subdir_html = '{}_html'.format(LOF_ID)  # html 文件存放子目录
     file_title = re.sub(r'[^\w\-_\. ]', '', title)
-    filename_html = '{}_{}_{}_{}.html'.format(LOF_ID, filenum, file_title, time) # html文件
+    filename_html = '{}_{}_{}_{}.html'.format(LOF_ID, post_id, file_title, time_str)
 
-    # 保存文章原html格式文件
+    # 保存文章原 html 格式文件
     write_file(subdir_html, filename_html, soup.prettify(), 'html')
 
 
 #保存markdown格式
-def get_article_md(soup, LOF_ID, filenum):
+# def get_article_md(soup, LOF_ID, filenum):
+#     # 获取文章标题
+#     title_div = soup.find('h2', {'class': 'title'})
+#     if title_div != None:
+#         title = title_div.get_text().strip().replace('\n', '')
+#     else:
+#         title = filenum
+#
+#     # 获取文章发布时间
+#     time_div = soup.find('div', {'class': 'itm clear time'})
+#     if time_div != None:
+#         time = time_div.get_text().strip()
+#     else:
+#         time = 'Default'
+#
+#     # 设置保存文件路径和文件名
+#     subdir_md = '{}_markdown'.format(LOF_ID)  # md文件
+#     file_title = re.sub(r'[^\w\-_\. ]', '', title)
+#     filename_md = '{}_{}_{}_{}.md'.format(LOF_ID, filenum, file_title, time)  # md文件
+#
+#     # 获取文章tag
+#     tag_list = soup.find('div', {'class': 'itm clear tag'})
+#     if tag_list != None:
+#         tag_list = [a.text.replace('#', '') for a in tag_list.find_all('a')]
+#         tags = ','.join(tag_list)
+#     else:
+#         tags = None
+#
+#     # 获取文章作者
+#     author = soup.find('a', {'class': 'blogtitle'}) .get_text().strip()
+#
+#
+#     # 获取文章类别
+#     if soup.find('div', {'class': 'post article'}) != None:
+#         categories = 'Text'
+#     elif soup.find('div', {'class': 'post photo'}) != None:
+#         categories = 'Photo'
+#     elif soup.find('div', {'class': 'post video'}) != None:
+#         categories = 'Video'
+#     else:
+#         categories = None
+#
+#     md_content = []
+#     # 生成markdown内容
+#     # 文章基本信息 div_info
+#     info = '---\ntitle: \"{}\"\ndate: {}\ntags: [{}]\nauthor: \"{}\"\ncategories: [{}]\n---'.format(title, time, tags, author, categories)
+#     md_content.append(info)
+#     md_content.append('\n\n\n')
+#
+#     # 文章内容 div_content
+#     #标题
+#     if title_div != None:
+#         for i in title_div:
+#             title_md = html2text.html2text(str(i))
+#             md_content.append("##"+title_md)
+#
+#     # 图片
+#     img_list = [a.get('bigimgsrc') for a in soup.find_all('a', {'class': 'imgclasstag'})]
+#     img = [f'<img src="{img}">' for img in img_list]
+#
+#     if img_list != None:
+#         for i in img:
+#             md_content.append(i)
+#         md_content.append('\n\n')
+#
+#     # 文字
+#     html_text = soup.find_all('div', {'class': 'text'})
+#     for i in html_text:
+#         md_text = html2text.html2text(str(i)).strip()
+#         md_content.append(md_text)
+#         md_content.append('\n')
+#
+#     # 热度和评论数量
+#     hot = ' '.join([div.text.strip() for div in soup.find_all('div', {'class': 'nctitle'})])
+#     md_content.append('\n\n\n\n\n\n\n')
+#     md_content.append(hot)
+#
+#     # 获取评论链接以及内容
+#     comment_soup = soup
+#     for tag in comment_soup.find_all('div', class_='bcmtlstj'):
+#         s_fcs = tag.find_all('span', class_='s-fc3 itag', style='display:none;')
+#         for s_fc in s_fcs:
+#             s_fc.extract()
+#     comment_html = comment_soup.find_all('div', class_='bcmtlstj')
+#     md_content.append('\n\n\n\n\n---------------------------------------\n')
+#     for i in comment_html:
+#         comment_md = html2text.html2text(str(i)).strip()
+#         md_content.append(comment_md)
+#         md_content.append('\n\n')
+#
+#
+#     # 保存文章原html格式文件
+#     write_file(subdir_md, filename_md, md_content, 'md')
+
+def get_article_md(soup, LOF_ID, article_url):
+    # 使用辅助函数提取文章的唯一 post id
+    post_id = extract_post_id(article_url)
+
     # 获取文章标题
     title_div = soup.find('h2', {'class': 'title'})
-    if title_div != None:
+    if title_div is not None:
         title = title_div.get_text().strip().replace('\n', '')
     else:
-        title = filenum
+        title = post_id
 
     # 获取文章发布时间
     time_div = soup.find('div', {'class': 'itm clear time'})
-    if time_div != None:
-        time = time_div.get_text().strip()
+    if time_div is not None:
+        time_str = time_div.get_text().strip()
     else:
-        time = 'Default'
+        time_str = 'Default'
 
-    # 设置保存文件路径和文件名
-    subdir_md = '{}_markdown'.format(LOF_ID)  # md文件
+    # 构造保存路径和文件名
+    subdir_md = '{}_markdown'.format(LOF_ID)  # 存放 Markdown 文件的子目录
+    import re
     file_title = re.sub(r'[^\w\-_\. ]', '', title)
-    filename_md = '{}_{}_{}_{}.md'.format(LOF_ID, filenum, file_title, time)  # md文件
+    filename_md = '{}_{}_{}_{}.md'.format(LOF_ID, post_id, file_title, time_str)
 
-    # 获取文章tag
+    # 获取文章标签
     tag_list = soup.find('div', {'class': 'itm clear tag'})
-    if tag_list != None:
+    if tag_list is not None:
         tag_list = [a.text.replace('#', '') for a in tag_list.find_all('a')]
         tags = ','.join(tag_list)
     else:
-        tags = None
+        tags = ''
 
     # 获取文章作者
-    author = soup.find('a', {'class': 'blogtitle'}) .get_text().strip()
-
+    author_tag = soup.find('a', {'class': 'blogtitle'})
+    if author_tag is not None:
+        author = author_tag.get_text().strip()
+    else:
+        author = 'Unknown'
 
     # 获取文章类别
-    if soup.find('div', {'class': 'post article'}) != None:
+    if soup.find('div', {'class': 'post article'}) is not None:
         categories = 'Text'
-    elif soup.find('div', {'class': 'post photo'}) != None:
+    elif soup.find('div', {'class': 'post photo'}) is not None:
         categories = 'Photo'
-    elif soup.find('div', {'class': 'post video'}) != None:
+    elif soup.find('div', {'class': 'post video'}) is not None:
         categories = 'Video'
     else:
-        categories = None
+        categories = ''
 
+    # 构造 Markdown 内容
     md_content = []
-    # 生成markdown内容
-    # 文章基本信息 div_info
-    info = '---\ntitle: \"{}\"\ndate: {}\ntags: [{}]\nauthor: \"{}\"\ncategories: [{}]\n---'.format(title, time, tags, author, categories)
+    info = '---\ntitle: "{}"\ndate: {}\ntags: [{}]\nauthor: "{}"\ncategories: [{}]\n---'.format(title, time_str, tags,
+                                                                                                author, categories)
     md_content.append(info)
     md_content.append('\n\n\n')
 
-    # 文章内容 div_content
-    #标题
-    if title_div != None:
+    # 添加标题部分
+    if title_div is not None:
+        import html2text
         for i in title_div:
             title_md = html2text.html2text(str(i))
-            md_content.append("##"+title_md)
+            md_content.append("##" + title_md)
 
-    # 图片
+    # 添加图片部分
     img_list = [a.get('bigimgsrc') for a in soup.find_all('a', {'class': 'imgclasstag'})]
-    img = [f'<img src="{img}">' for img in img_list]
+    if img_list is not None:
+        for img in img_list:
+            md_content.append('<img src="{}">'.format(img))
+            md_content.append('\n\n')
 
-    if img_list != None:
-        for i in img:
-            md_content.append(i)
-        md_content.append('\n\n')
-
-    # 文字
+    # 添加正文文字部分
     html_text = soup.find_all('div', {'class': 'text'})
     for i in html_text:
+        import html2text
         md_text = html2text.html2text(str(i)).strip()
         md_content.append(md_text)
         md_content.append('\n')
 
-    # 热度和评论数量
+    # 添加热度和评论数量部分
     hot = ' '.join([div.text.strip() for div in soup.find_all('div', {'class': 'nctitle'})])
     md_content.append('\n\n\n\n\n\n\n')
     md_content.append(hot)
 
-    # 获取评论链接以及内容
+    # 添加评论部分
     comment_soup = soup
     for tag in comment_soup.find_all('div', class_='bcmtlstj'):
         s_fcs = tag.find_all('span', class_='s-fc3 itag', style='display:none;')
@@ -261,14 +444,15 @@ def get_article_md(soup, LOF_ID, filenum):
             s_fc.extract()
     comment_html = comment_soup.find_all('div', class_='bcmtlstj')
     md_content.append('\n\n\n\n\n---------------------------------------\n')
+    import html2text
     for i in comment_html:
         comment_md = html2text.html2text(str(i)).strip()
         md_content.append(comment_md)
         md_content.append('\n\n')
 
-
-    # 保存文章原html格式文件
+    # 保存 Markdown 文件
     write_file(subdir_md, filename_md, md_content, 'md')
+
 
 
 
