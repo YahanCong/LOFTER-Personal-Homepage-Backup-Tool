@@ -94,6 +94,7 @@ selenium==4.8.2
 2025.03.03 存档previous_modify文件夹，文件夹内修改的code支持断点续传，可以指定继续备份的链接序号，已通过测试，使用时用previous_modify/main.py和previous_modify/tool.py替换主文件夹的main.py和tool.py
 #### 未测试过的草稿部分
 2025.03.03 在原博主基础上更新main.py 和tool.py，加入断点续传与更新检测 (测试未完成，可能还有bug)
+
 2025.03.03 更新用文件夹分割多个账号  未测试，有空再测
 
 
