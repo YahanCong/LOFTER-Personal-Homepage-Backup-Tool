@@ -104,17 +104,30 @@ def main():
     ##############################
     # 1. 前置工作和登录检查
     ##############################
+    # 登录及前置检查部分
     login_flag = input('是否登录？输入Y确定：\n').strip().upper() == 'Y'
     if login_flag:
         cookie_user = input('请输入你的cookie：\n').strip()
-        # 构造 requests 使用的 cookie 字典
         cookie = {'Cookie': cookie_user}
-        # 通过 Selenium 获取最新的 cookie 并保存到 cookies.txt
-        get_cookies()
+        # 获取最新 cookie（这里可以将 cookies.txt 保存到特定账号文件夹中）
+        get_cookies()  # 若 get_cookies() 支持传入保存路径，可修改为 get_cookies(cookies_file)
     else:
         cookie = ''
 
     LOF_ID = input('请输入你的LOFTER用户名：\n').strip()
+
+    # 为每个账号创建独立的文件夹
+    account_dir = os.path.join("data", LOF_ID)
+    if not os.path.exists(account_dir):
+        os.makedirs(account_dir)
+        print(f"创建账号文件夹：{account_dir}")
+    else:
+        print(f"使用已有账号文件夹：{account_dir}")
+
+    # 定义文件路径
+    article_links_file = os.path.join(account_dir, "article_links.txt")
+    processed_ids_file = os.path.join(account_dir, "processed_ids.txt")
+    cookies_file = os.path.join(account_dir, "cookies.txt")
 
     # 验证登录状态
     response = requests.get(f'https://{LOF_ID}.lofter.com/', cookies=cookie)
@@ -125,11 +138,32 @@ def main():
         if input('是否要结束程序？输入Y退出：\n').strip().upper() == 'Y':
             return
         cookie = ''
+    # login_flag = input('是否登录？输入Y确定：\n').strip().upper() == 'Y'
+    # if login_flag:
+    #     cookie_user = input('请输入你的cookie：\n').strip()
+    #     # 构造 requests 使用的 cookie 字典
+    #     cookie = {'Cookie': cookie_user}
+    #     # 通过 Selenium 获取最新的 cookie 并保存到 cookies.txt
+    #     get_cookies()
+    # else:
+    #     cookie = ''
+    #
+    # LOF_ID = input('请输入你的LOFTER用户名：\n').strip()
+    #
+    # # 验证登录状态
+    # response = requests.get(f'https://{LOF_ID}.lofter.com/', cookies=cookie)
+    # if response.status_code == 200:
+    #     print('登录请求成功')
+    # else:
+    #     print('登录请求失败，请检查cookie是否正确')
+    #     if input('是否要结束程序？输入Y退出：\n').strip().upper() == 'Y':
+    #         return
+    #     cookie = ''
 
     ##############################
     # 2. 链接抓取与更新选择
     ##############################
-    article_links_file = 'article_links.txt'
+    #article_links_file = 'article_links.txt'
     update_choice = input("是否更新抓取链接？输入Y更新（会抓取最新链接），输入N使用已有链接文件：\n").strip().upper()
     if update_choice == 'Y':
         # 获取最新的所有链接（例如可能抓取到1200个链接）
